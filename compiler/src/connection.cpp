@@ -28,15 +28,9 @@
 #include "scheduler.h"
 #include "server.h"
 
-#if BOOST_VERSION >= 107000
-#define GET_IO_SERVICE(s) ((boost::asio::io_context&)(s).get_executor().context())
-#else
-#define GET_IO_SERVICE(s) ((s).get_io_service())
-#endif
-
 extern ConfigManager g_config;
 
-Connection_ptr ConnectionManager::createConnection(boost::asio::io_service& io_service, ConstServicePort_ptr servicePort)
+Connection_ptr ConnectionManager::createConnection(boost::asio::io_context& io_service, ConstServicePort_ptr servicePort)
 {
 	std::lock_guard<std::mutex> lockClass(connectionManagerLock);
 
@@ -279,14 +273,19 @@ uint32_t Connection::getIP()
 		return 0;
 	}
 
-	return htonl(endpoint.address().to_v4().to_ulong());
+	return htonl(endpoint.address().to_v4().to_uint());
 }
 
 void Connection::dispatchBroadcastMessage(const OutputMessage_ptr& msg)
 {
 	auto msgCopy = OutputMessagePool::getOutputMessage();
 	msgCopy->append(msg);
-	GET_IO_SERVICE(socket).dispatch(std::bind(&Connection::broadcastMessage, shared_from_this(), msgCopy));
+
+	boost::asio::dispatch(socket.get_executor(),
+		[self = shared_from_this(), msgCopy]() {
+			self->broadcastMessage(msgCopy);
+		}
+	);
 }
 
 void Connection::broadcastMessage(OutputMessage_ptr msg)

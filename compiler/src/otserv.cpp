@@ -58,6 +58,7 @@ void startupErrorMessage(const std::string& errorStr)
 {
 	std::cout << "> ERROR: " << errorStr << std::endl;
 	g_loaderSignal.notify_all();
+	std::cin.get();
 }
 
 void mainLoader(int argc, char* argv[], ServiceManager* servicer);
@@ -114,6 +115,7 @@ int main(int argc, char* argv[])
 		g_scheduler.shutdown();
 		g_databaseTasks.shutdown();
 		g_dispatcher.shutdown();
+		std::cin.get();
 	}
 
 	g_scheduler.join();
