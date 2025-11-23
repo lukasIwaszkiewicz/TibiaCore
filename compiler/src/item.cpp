@@ -178,6 +178,10 @@ bool Item::equals(const Item* otherItem) const
 		return false;
 	}
 
+	if (isStackable()) {
+        return true;
+	}
+
 	if (!attributes) {
 		return !otherItem->attributes;
 	}
